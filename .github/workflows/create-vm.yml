@@ -11,15 +11,30 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: 'Configure OCI CLI'
-      uses: oracle-actions/setup-oci-cli@v1.3.2
-      with:
-        user: ${{ secrets.OCI_USER_OCID }}
-        tenancy: ${{ secrets.OCI_TENANCY_OCID }}
-        fingerprint: ${{ secrets.OCI_FINGERPRINT }}
-        region: ap-tokyo-1
-        private_key: ${{ secrets.OCI_PRIVATE_KEY }}
-
-    - name: 'Trigger OCI Stack Apply'
+    - name: 'Install and Run OCI CLI'
+      env:
+        OCI_USER: ${{ secrets.OCI_USER_OCID }}
+        OCI_TENANCY: ${{ secrets.OCI_TENANCY_OCID }}
+        OCI_FINGERPRINT: ${{ secrets.OCI_FINGERPRINT }}
+        OCI_STACK: ${{ secrets.OCI_STACK_OCID }}
+        OCI_KEY: ${{ secrets.OCI_PRIVATE_KEY }}
       run: |
-        oci resource-manager job create-apply-job --stack-id "${{ secrets.OCI_STACK_OCID }}" --execution-plan-strategy "FROM_PLAN_OUTPUT" --wait-for-state "SUCCEEDED" --wait-for-state "FAILED"
+        # 安裝 OCI CLI 工具
+        bash -c "$(curl -L https://githubusercontent.com)" -- --accept-all-defaults
+        
+        # 設定設定檔
+        mkdir -p ~/.oci
+        echo "$OCI_KEY" > ~/.oci/oci_api_key.pem
+        chmod 600 ~/.oci/oci_api_key.pem
+        
+        echo "[DEFAULT]" > ~/.oci/config
+        echo "user=$OCI_USER" >> ~/.oci/config
+        echo "fingerprint=$OCI_FINGERPRINT" >> ~/.oci/config
+        echo "tenancy=$OCI_TENANCY" >> ~/.oci/config
+        echo "region=ap-tokyo-1" >> ~/.oci/config
+        echo "key_file=~/.oci/oci_api_key.pem" >> ~/.oci/config
+        chmod 600 ~/.oci/config
+
+        # 執行觸發開機指令
+        export PATH=$PATH:$HOME/bin
+        oci resource-manager job create-apply-job --stack-id "$OCI_STACK" --execution-plan-strategy "FROM_PLAN_OUTPUT"
