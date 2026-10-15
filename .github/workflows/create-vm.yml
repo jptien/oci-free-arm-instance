@@ -11,25 +11,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: 'Install OCI CLI'
-      run: |
-        curl -sL https://githubusercontent.com | bash -s -- --accept-all-defaults
-        exec -l $SHELL
-        
-    - name: 'Setup OCI Config'
-      env:
-        OCI_KEY: ${{ secrets.OCI_PRIVATE_KEY }}
-      run: |
-        mkdir -p ~/.oci
-        echo "$OCI_KEY" > ~/.oci/oci_api_key.pem
-        echo "[DEFAULT]" > ~/.oci/config
-        echo "user=${{ secrets.OCI_USER_OCID }}" >> ~/.oci/config
-        echo "fingerprint=${{ secrets.OCI_FINGERPRINT }}" >> ~/.oci/config
-        echo "tenancy=${{ secrets.OCI_TENANCY_OCID }}" >> ~/.oci/config
-        echo "region=ap-tokyo-1" >> ~/.oci/config
-        echo "key_file=~/.oci/oci_api_key.pem" >> ~/.oci/config
-        chmod 600 ~/.oci/config ~/.oci/oci_api_key.pem
+    - name: 'Configure OCI CLI'
+      uses: oracle-actions/setup-oci-cli@v1.3.2
+      with:
+        user: ${{ secrets.OCI_USER_OCID }}
+        tenancy: ${{ secrets.OCI_TENANCY_OCID }}
+        fingerprint: ${{ secrets.OCI_FINGERPRINT }}
+        region: ap-tokyo-1
+        private_key: ${{ secrets.OCI_PRIVATE_KEY }}
 
     - name: 'Trigger OCI Stack Apply'
       run: |
-        ~/bin/oci resource-manager job create-apply-job --stack-id "${{ secrets.OCI_STACK_OCID }}" --execution-plan-strategy "FROM_PLAN_OUTPUT" --wait-for-state "SUCCEEDED" --wait-for-state "FAILED"
+        oci resource-manager job create-apply-job --stack-id "${{ secrets.OCI_STACK_OCID }}" --execution-plan-strategy "FROM_PLAN_OUTPUT" --wait-for-state "SUCCEEDED" --wait-for-state "FAILED"
