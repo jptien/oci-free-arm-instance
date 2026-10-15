@@ -11,18 +11,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: 'Install and Run OCI CLI'
+    - name: 'Set up Python'
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: 'Install OCI CLI via Pip'
+      run: |
+        python -m pip install --upgrade pip
+        pip install oci-cli
+
+    - name: 'Configure OCI Config'
       env:
         OCI_USER: ${{ secrets.OCI_USER_OCID }}
         OCI_TENANCY: ${{ secrets.OCI_TENANCY_OCID }}
         OCI_FINGERPRINT: ${{ secrets.OCI_FINGERPRINT }}
-        OCI_STACK: ${{ secrets.OCI_STACK_OCID }}
         OCI_KEY: ${{ secrets.OCI_PRIVATE_KEY }}
       run: |
-        # 安裝 OCI CLI 工具
-        bash -c "$(curl -L https://githubusercontent.com)" -- --accept-all-defaults
-        
-        # 設定設定檔
         mkdir -p ~/.oci
         echo "$OCI_KEY" > ~/.oci/oci_api_key.pem
         chmod 600 ~/.oci/oci_api_key.pem
@@ -35,6 +40,6 @@ jobs:
         echo "key_file=~/.oci/oci_api_key.pem" >> ~/.oci/config
         chmod 600 ~/.oci/config
 
-        # 執行觸發開機指令
-        export PATH=$PATH:$HOME/bin
-        oci resource-manager job create-apply-job --stack-id "$OCI_STACK" --execution-plan-strategy "FROM_PLAN_OUTPUT"
+    - name: 'Trigger OCI Stack Apply'
+      run: |
+        oci resource-manager job create-apply-job --stack-id "${{ secrets.OCI_STACK_OCID }}" --execution-plan-strategy "FROM_PLAN_OUTPUT"
