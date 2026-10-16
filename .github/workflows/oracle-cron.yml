@@ -50,5 +50,5 @@ jobs:
         sleep 1800
         curl -X POST -H "Authorization: token ${{ secrets.PAT_TOKEN }}" \
         -H "Accept: application/vnd.github.v3+json" \
-        https://github.com{{ github.repository }}/actions/workflows/oracle-cron.yml/dispatches \
+        https://github.com \
         -d '{"ref":"main"}'
