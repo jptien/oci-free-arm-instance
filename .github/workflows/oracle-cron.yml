@@ -43,3 +43,12 @@ jobs:
     - name: 'Trigger OCI Stack Apply'
       run: |
         oci resource-manager job create-apply-job --stack-id "${{ secrets.OCI_STACK_OCID }}" --execution-plan-strategy "AUTO_APPROVED"
+
+    - name: 'Loop Self Trigger'
+      if: always()
+      run: |
+        sleep 1800
+        curl -X POST -H "Authorization: token ${{ secrets.PAT_TOKEN }}" \
+        -H "Accept: application/vnd.github.v3+json" \
+        https://github.com{{ github.repository }}/actions/workflows/oracle-cron.yml/dispatches \
+        -d '{"ref":"main"}'
